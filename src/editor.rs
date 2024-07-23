@@ -107,9 +107,12 @@ impl EditorState {
         }
     }
 
-    pub fn redraw(&self) -> Result<()> {
+    pub fn redraw(&mut self) -> Result<()> {
         let upper_limit = self.data.len().min(self.term_y + self.term.height());
-        self.term.redraw(&self.data[self.term_y..upper_limit])
+        self.term.redraw(
+            self.mode == Mode::Insert,
+            &self.data[self.term_y..upper_limit],
+        )
     }
 
     pub fn resize(&mut self, width: usize, height: usize) {
@@ -126,11 +129,46 @@ impl EditorState {
     pub fn mode(&self) -> Mode {
         self.mode
     }
+    
+    pub fn insert_mode(&mut self) {
+        self.mode = Mode::Insert;
+        self.term.change_mode(&self.mode)
+    }
+    
+    pub fn normal_mode(&mut self) {
+        self.mode = Mode::Normal;
+        self.term.change_mode(&self.mode)
+    }
+
+    pub fn visual_mode(&mut self) {
+        self.mode = Mode::Visual;
+        self.term.change_mode(&self.mode)
+    }
 
     pub fn insert(&mut self, pos: Position, text: &str) {
         let (p1, p2) = self.data[pos.lnum].split_at(pos.index);
         self.data[pos.lnum] = format!("{}{}{}", p1, text, p2);
-        self.term.move_to(self.term.cursor_x() + text.len(), self.term.cursor_y());
+        self.term
+            .move_to(self.term.cursor_x() + text.len(), self.term.cursor_y());
+    }
+
+    pub fn insert_newline(&mut self, pos: Position) {
+        let line = String::from(&self.data[pos.lnum]);
+        let (p1, p2) = line.split_at(pos.index);
+
+        self.data[pos.lnum] = p1.to_string();
+        self.data.insert(pos.lnum + 1, p2.to_string());
+
+        self.term.move_to(0, self.term.cursor_y() + 1)
+    }
+
+    pub fn delete_newline(&mut self, lnum: usize) {
+        let end_index = self.data[lnum].len();
+
+        let line = self.data.remove(lnum + 1);
+        self.data[lnum] = format!("{}{}", self.data[lnum], line);
+
+        self.term.move_to(end_index, lnum);
     }
 
     pub fn delete(&mut self, txt_obj: TextObject) {
@@ -146,11 +184,16 @@ impl EditorState {
             self.data.remove(lnum);
         }
     }
-    
+
+    pub fn backspace(&mut self, pos: Position) {
+        self.data[pos.lnum].remove(pos.index - 1);
+        self.cursor_left()
+    }
+
     pub fn cursor_right(&mut self) {
         self.term.cursor_right()
     }
-    
+
     pub fn cursor_left(&mut self) {
         self.term.cursor_left()
     }
@@ -158,7 +201,7 @@ impl EditorState {
     pub fn cursor_down(&mut self) {
         self.term.cursor_down()
     }
-    
+
     pub fn cursor_up(&mut self) {
         self.term.cursor_up()
     }

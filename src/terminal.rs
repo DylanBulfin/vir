@@ -59,7 +59,20 @@ impl Term {
         })
     }
 
-    pub fn redraw(&self, text: &[String]) -> Result<()> {
+    fn clamp_cursor(&mut self, insert: bool, text: &[String]) {
+        let max_y = text.len().min(self.width) - 1;
+        if self.cursor.y > max_y {
+            self.cursor.y = max_y;
+        }
+
+        let max_x = text[self.cursor.y].len().min(self.height) - if insert { 0 } else { 1 };
+        if self.cursor.x > max_x {
+            self.cursor.x = max_x;
+        }
+    }
+
+    pub fn redraw(&mut self, insert: bool, text: &[String]) -> Result<()> {
+        self.clamp_cursor(insert, text);
         let mut stdout = stdout();
 
         queue!(
