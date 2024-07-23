@@ -2,15 +2,6 @@ use crossterm::event::{Event, KeyEvent};
 
 use crate::{editor::TextObject, terminal::Term};
 
-pub(crate) enum InsertAction {
-    Write(char),
-    DelForw,
-    DelBack,
-    NewLine,
-
-    NormalMode,
-}
-
 pub(crate) enum NormalAction {
     ReplaceChar(char),
     Delete(TextObject),
@@ -31,4 +22,3 @@ pub(crate) enum VisualAction {
 }
 
 
-pub fn process_insert_input(ke: KeyEvent, term: &mut Term) {}

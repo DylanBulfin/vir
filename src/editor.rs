@@ -59,15 +59,15 @@ impl TextObject {
     }
 }
 
-pub(crate) struct Editor {
+pub(crate) struct Buffer {
     data: Vec<String>,
     term_x: usize,
     term_y: usize,
 }
 
-impl Editor {
+impl Buffer {
     pub fn new(data: Vec<String>) -> Self {
-        Editor {
+        Buffer {
             data,
             term_x: 0,
             term_y: 0,

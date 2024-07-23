@@ -6,6 +6,8 @@ use crossterm::{
     terminal::{self, enable_raw_mode},
 };
 
+use crate::modes::Mode;
+
 enum CursorMode {
     BlinkLine,
     BlinkBar,
@@ -84,6 +86,14 @@ impl<'a> Term<'a> {
 
         self.cursor.x = self.cursor.x.clamp(0, self.width - 1);
         self.cursor.y = self.cursor.y.clamp(0, self.height - 1);
+    }
+    
+    pub fn change_mode(&mut self, mode: &Mode) {
+        match mode{
+            Mode::Insert => self.cursor.mode = CursorMode::BlinkLine,
+            Mode::Normal => self.cursor.mode = CursorMode::BlinkBar,
+            Mode::Visual => self.cursor.mode = CursorMode::Bar,
+        }
     }
 
     pub fn move_to(&mut self, x: usize, y: usize) {

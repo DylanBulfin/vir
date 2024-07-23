@@ -11,3 +11,4 @@ pub fn find_word_end(line: &str, index: usize) -> usize {
         None => line.len() - 1,
     }
 }
+
