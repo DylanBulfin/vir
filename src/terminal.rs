@@ -14,21 +14,31 @@ enum CursorMode {
     Bar,
 }
 
-struct Cursor {
+pub struct Cursor {
     x: usize,
     y: usize,
     mode: CursorMode,
 }
 
-pub(crate) struct Term<'a> {
+impl Cursor {
+    pub fn x(&self) -> usize {
+        self.x
+    }
+
+    pub fn y(&self) -> usize {
+        self.y
+    }
+}
+
+pub(crate) struct Term {
     width: usize,
     height: usize,
     cursor: Cursor,
-    pub text: &'a [String],
+    x_offset: usize,
 }
 
-impl<'a> Term<'a> {
-    pub fn new(text: &'a [String]) -> Result<Self> {
+impl Term {
+    pub fn new() -> Result<Self> {
         enable_raw_mode()?;
         let mut stdout = stdout();
         queue!(
@@ -45,11 +55,11 @@ impl<'a> Term<'a> {
                 y: 0,
                 mode: CursorMode::BlinkBar,
             },
-            text,
+            x_offset: 0,
         })
     }
 
-    pub fn redraw(&self) -> Result<()> {
+    pub fn redraw(&self, text: &[String]) -> Result<()> {
         let mut stdout = stdout();
 
         queue!(
@@ -58,7 +68,13 @@ impl<'a> Term<'a> {
             cursor::MoveTo(0, 0),
         )?;
 
-        for line in self.text.iter() {
+        for line in text.iter() {
+            let line = if line.len() <= self.x_offset {
+                ""
+            } else {
+                let limit = self.width.min(line.len() - self.x_offset);
+                &line[self.x_offset..self.x_offset + limit]
+            };
             println!("{}", line);
             queue!(
                 stdout,
@@ -87,9 +103,9 @@ impl<'a> Term<'a> {
         self.cursor.x = self.cursor.x.clamp(0, self.width - 1);
         self.cursor.y = self.cursor.y.clamp(0, self.height - 1);
     }
-    
+
     pub fn change_mode(&mut self, mode: &Mode) {
-        match mode{
+        match mode {
             Mode::Insert => self.cursor.mode = CursorMode::BlinkLine,
             Mode::Normal => self.cursor.mode = CursorMode::BlinkBar,
             Mode::Visual => self.cursor.mode = CursorMode::Bar,
@@ -101,11 +117,43 @@ impl<'a> Term<'a> {
         self.cursor.y = y;
     }
 
+    pub fn cursor_left(&mut self) {
+        if self.cursor.x > 0 {
+            self.cursor.x -= 1;
+        }
+    }
+
+    pub fn cursor_right(&mut self) {
+        if self.cursor.x < self.width - 1 {
+            self.cursor.x += 1;
+        }
+    }
+
+    pub fn cursor_up(&mut self) {
+        if self.cursor.y > 0 {
+            self.cursor.y -= 1;
+        }
+    }
+
+    pub fn cursor_down(&mut self) {
+        if self.cursor.y < self.height - 1 {
+            self.cursor.y += 1;
+        }
+    }
+
     pub fn width(&self) -> usize {
         self.width
     }
 
     pub fn height(&self) -> usize {
         self.height
+    }
+
+    pub fn cursor_x(&self) -> usize {
+        self.cursor.x
+    }
+
+    pub fn cursor_y(&self) -> usize {
+        self.cursor.y
     }
 }

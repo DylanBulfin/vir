@@ -1,7 +1,6 @@
-use std::io::Result;
-use std::ops::Deref;
+use std::{env, io::Result};
 
-use crate::{terminal::Term, util};
+use crate::{modes::Mode, terminal::Term};
 
 #[derive(Clone, Copy)]
 pub(crate) struct Position {
@@ -12,6 +11,14 @@ pub(crate) struct Position {
 impl Position {
     pub fn new(lnum: usize, index: usize) -> Self {
         Self { lnum, index }
+    }
+
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    pub fn lnum(&self) -> usize {
+        self.lnum
     }
 }
 
@@ -25,11 +32,11 @@ impl From<(usize, usize)> for Position {
 }
 
 pub(crate) enum TextObject {
-    Char(Position),      // Line number, index
-    Line(usize),         // Line number
-    LineEnd(Position),   // Line number, start_index
-    Lines(usize, u16),   // Line number, count
-    Word(Position, u16), // Line number, length
+    Char(Position),        // Line number, index
+    Line(usize),           // Line number
+    LineEnd(Position),     // Line number, start_index
+    Lines(usize, u16),     // Line number, count
+    Word(Position, usize), // Line number, length
 
     // (start_lnum, start_index), (end_lnum, end_index)
     Other(Position, Position),
@@ -57,24 +64,102 @@ impl TextObject {
             TextObject::Other(_, p) => *p,
         }
     }
+
+    pub fn get_bounds(&self) -> (Position, Position) {
+        (self.get_start(), self.get_end())
+    }
 }
 
-pub(crate) struct Buffer {
+pub fn get_word_textobject(pos: Position, line: &str) -> TextObject {
+    let word_chars = match env::var("WORDCHARS") {
+        Ok(wc) => wc,
+        Err(_) => String::from("*?_-.[]~=&;!#$%^(){}<>"),
+    };
+
+    TextObject::Word(
+        pos,
+        match line[pos.index..].split_once(|c| word_chars.contains(c)) {
+            Some((w, _)) => w.len(),
+            None => line.len() - pos.index,
+        },
+    )
+}
+
+pub enum EditorAction {
+    None,
+    Exit,
+}
+
+pub(crate) struct EditorState {
     data: Vec<String>,
-    term_x: usize,
     term_y: usize,
+    mode: Mode,
+    term: Term,
 }
 
-impl Buffer {
-    pub fn new(data: Vec<String>) -> Self {
-        Buffer {
+impl EditorState {
+    pub fn new(data: Vec<String>, term: Term) -> Self {
+        EditorState {
             data,
-            term_x: 0,
             term_y: 0,
+            mode: Mode::Insert,
+            term,
         }
     }
 
-    pub fn get_slice(&self, height: usize) -> &'_ [String] {
-        &self.data[self.term_y..self.term_y + height]
+    pub fn redraw(&self) -> Result<()> {
+        let upper_limit = self.data.len().min(self.term_y + self.term.height());
+        self.term.redraw(&self.data[self.term_y..upper_limit])
+    }
+
+    pub fn resize(&mut self, width: usize, height: usize) {
+        self.term.resize(width, height)
+    }
+
+    pub fn cursor_pos(&self) -> Position {
+        Position {
+            lnum: self.term_y + self.term.cursor_y(),
+            index: self.term.cursor_x(),
+        }
+    }
+
+    pub fn mode(&self) -> Mode {
+        self.mode
+    }
+
+    pub fn insert(&mut self, pos: Position, text: &str) {
+        let (p1, p2) = self.data[pos.lnum].split_at(pos.index);
+        self.data[pos.lnum] = format!("{}{}{}", p1, text, p2);
+        self.term.move_to(self.term.cursor_x() + text.len(), self.term.cursor_y());
+    }
+
+    pub fn delete(&mut self, txt_obj: TextObject) {
+        let (start, end) = txt_obj.get_bounds();
+
+        self.data[start.lnum] = format!(
+            "{}{}",
+            &self.data[start.lnum][..start.index],
+            &self.data[end.lnum][end.index..]
+        );
+
+        for lnum in start.lnum + 1..end.lnum + 1 {
+            self.data.remove(lnum);
+        }
+    }
+    
+    pub fn cursor_right(&mut self) {
+        self.term.cursor_right()
+    }
+    
+    pub fn cursor_left(&mut self) {
+        self.term.cursor_left()
+    }
+
+    pub fn cursor_down(&mut self) {
+        self.term.cursor_down()
+    }
+    
+    pub fn cursor_up(&mut self) {
+        self.term.cursor_up()
     }
 }

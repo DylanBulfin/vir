@@ -1,8 +1,8 @@
-use std::io::Result;
+use std::{default, io::Result};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::editor::Buffer;
+use crate::editor::{EditorAction, EditorState};
 
 pub(crate) enum InsertAction {
     Write(char),
@@ -24,23 +24,26 @@ pub(crate) enum InsertAction {
 
 const TABSTOP: u32 = 2;
 
-pub fn process_insert_input(ke: KeyEvent, buf: &mut Buffer) -> Result<()> {
+pub fn process_insert_input(ke: KeyEvent, buf: &mut EditorState) -> Result<EditorAction> {
     let action = parse_insert_input(ke)?;
+    let cursor_pos = buf.cursor_pos();
 
     match action {
-        InsertAction::Write(c) => todo!(),
+        InsertAction::Write(c) => buf.insert(cursor_pos, &c.to_string()),
         InsertAction::DelForw => todo!(),
         InsertAction::DelBack => todo!(),
         InsertAction::NewLine => todo!(),
         InsertAction::Indent => todo!(),
-        InsertAction::Up => todo!(),
-        InsertAction::Down => todo!(),
-        InsertAction::Left => todo!(),
-        InsertAction::Right => todo!(),
+        InsertAction::Up => buf.cursor_up(),
+        InsertAction::Down => buf.cursor_down(),
+        InsertAction::Left => buf.cursor_left(),
+        InsertAction::Right => buf.cursor_right(),
         InsertAction::NormalMode => todo!(),
-        InsertAction::Exit => todo!(),
-        InsertAction::None => todo!(),
+        InsertAction::Exit => return Ok(EditorAction::Exit),
+        InsertAction::None => (),
     }
+    
+    Ok(EditorAction::None)
 }
 
 
@@ -57,13 +60,9 @@ fn parse_insert_input(ke: KeyEvent) -> Result<InsertAction> {
                 KeyCode::Tab => InsertAction::Indent,
                 KeyCode::Delete => InsertAction::DelForw,
                 KeyCode::Esc => InsertAction::NormalMode,
-                KeyCode::Char(_) => todo!(),
+                KeyCode::Char(c) => InsertAction::Write(c),
                 _ => InsertAction::None,
             }
-        } else if ke.modifiers
-            == KeyModifiers::from_name("CONTROL").expect("Unable to check modifiers")
-        {
-            if let KeyCode::Char(c) = ke.code {}
         } else {
             InsertAction::None
         },

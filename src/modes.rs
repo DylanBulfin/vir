@@ -1,8 +1,9 @@
 use std::io::Result;
 
 use crossterm::event::{self, KeyCode, KeyEvent, KeyModifiers, ModifierKeyCode};
+use insert::process_insert_input;
 
-use crate::editor::Buffer;
+use crate::editor::{EditorAction, EditorState};
 
 mod insert;
 
@@ -13,12 +14,10 @@ pub enum Mode {
     Visual,
 }
 
-impl Mode {
-    pub fn execute_action(&self, ed: &mut Buffer) -> Result<()> {
-        match self {
-            Mode::Insert => todo!(),
-            Mode::Normal => todo!(),
-            Mode::Visual => todo!(),
-        }
+pub fn process_key_event(ke: KeyEvent, buf: &mut EditorState) -> Result<EditorAction>{
+    match buf.mode() {
+        Mode::Insert => process_insert_input(ke, buf),
+        Mode::Normal => todo!(),
+        Mode::Visual => todo!(),
     }
 }
