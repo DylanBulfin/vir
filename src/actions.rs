@@ -8,6 +8,7 @@ pub enum EditorAction {
 }
 
 
+#[derive(Clone, Copy)]
 pub(crate) enum InsertAction {
     Write(char),
     DelForw,
@@ -26,11 +27,15 @@ pub(crate) enum InsertAction {
     None,
 }
 
+#[derive(Clone, Copy)]
 pub(crate) enum NormalAction {
     ReplaceChar(char),
     Delete(TextObject),
     Change(TextObject),
     Yank(TextObject),
+    
+    LineStart,
+    LineEnd,
 
     Up,
     Down,
@@ -45,6 +50,7 @@ pub(crate) enum NormalAction {
     None,
 }
 
+#[derive(Clone, Copy)]
 pub(crate) enum VisualAction {
     ReplaceChar(char),
     Delete(TextObject),

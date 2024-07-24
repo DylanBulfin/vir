@@ -1,24 +1,27 @@
-use std::io::Result;
+use std::fs::File;
+use std::io::{stdout, Result, Write};
 
 use actions::EditorAction;
+use config::Config;
 use crossterm::event::{self, read};
 use crossterm::terminal::disable_raw_mode;
-use editor::EditorState;
+use crossterm::{cursor, queue};
+use editor::{Cursor, EditorState};
 use modes::process_key_event;
 use terminal::Term;
 
-mod editor;
 mod actions;
+mod editor;
 mod terminal;
 mod util;
 
-mod modes;
 mod config;
+mod modes;
 
 fn main_loop() -> Result<()> {
-    let mut term = Term::new().unwrap();
-    term.change_mode(&modes::Mode::Insert);
-    let mut editor = EditorState::new(vec!["abc".to_string(), "bcdef".to_string()], term);
+    let term = Term::new()?;
+    let config = Config::init()?;
+    let mut editor = EditorState::new(vec!["abc".to_string(), "bcdef".to_string()], term, config);
 
     editor.redraw()?;
 
@@ -45,9 +48,12 @@ fn main_loop() -> Result<()> {
 
 fn main() -> Result<()> {
     std::panic::set_hook(Box::new(|p| {
+        let mut file = File::create("foo.txt").unwrap();
+        file.write_all(p.to_string().as_bytes()).unwrap();
         disable_raw_mode().unwrap();
         print!("{}", p)
     }));
-    main_loop()?;
+    main_loop();
+
     disable_raw_mode()
 }

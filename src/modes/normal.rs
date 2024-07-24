@@ -6,7 +6,7 @@ use crate::{actions::{EditorAction, NormalAction}, editor::{EditorState, TextObj
 
 pub fn process_normal_input(ke: KeyEvent, buf: &mut EditorState) -> Result<EditorAction> {
     let action = parse_normal_input(ke)?;
-    let cursor_pos = buf.cursor_pos();
+    let cursor_pos = buf.cursor().pos();
 
     match action {
         NormalAction::ReplaceChar(_) => todo!(),
@@ -22,6 +22,8 @@ pub fn process_normal_input(ke: KeyEvent, buf: &mut EditorState) -> Result<Edito
         NormalAction::Down => buf.cursor_down(),
         NormalAction::Left => buf.cursor_left(),
         NormalAction::Right => buf.cursor_right(),
+        NormalAction::LineStart => todo!(),
+        NormalAction::LineEnd => todo!(),
     }
 
     Ok(EditorAction::None)
