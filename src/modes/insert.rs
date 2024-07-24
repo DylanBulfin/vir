@@ -2,25 +2,8 @@ use std::{default, io::Result};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::editor::{EditorAction, EditorState, Position, TextObject};
-
-pub(crate) enum InsertAction {
-    Write(char),
-    DelForw,
-    DelBack,
-    NewLine,
-    Indent,
-
-    Up,
-    Down,
-    Left,
-    Right,
-
-    NormalMode,
-    Exit,
-
-    None,
-}
+use crate::editor::{EditorState, Position, TextObject};
+use crate::actions::{InsertAction, EditorAction};
 
 const TABSTOP: u32 = 2;
 

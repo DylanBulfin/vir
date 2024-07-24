@@ -1,13 +1,14 @@
 use std::io::Result;
 
+use actions::EditorAction;
 use crossterm::event::{self, read};
 use crossterm::terminal::disable_raw_mode;
-use editor::{EditorAction, EditorState};
+use editor::EditorState;
 use modes::process_key_event;
 use terminal::Term;
 
 mod editor;
-mod input;
+mod actions;
 mod terminal;
 mod util;
 

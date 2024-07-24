@@ -1,28 +1,8 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use std::io::Result;
 
-use crate::editor::{EditorAction, EditorState, TextObject};
+use crate::{actions::{EditorAction, NormalAction}, editor::{EditorState, TextObject}};
 
-use super::insert::InsertAction;
-
-pub(crate) enum NormalAction {
-    ReplaceChar(char),
-    Delete(TextObject),
-    Change(TextObject),
-    Yank(TextObject),
-
-    Up,
-    Down,
-    Left,
-    Right,
-
-    SearchMode,
-    InsertMode,
-    VisualMode,
-    Exit,
-
-    None,
-}
 
 pub fn process_normal_input(ke: KeyEvent, buf: &mut EditorState) -> Result<EditorAction> {
     let action = parse_normal_input(ke)?;

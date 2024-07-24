@@ -85,11 +85,6 @@ pub fn get_word_textobject(pos: Position, line: &str) -> TextObject {
     )
 }
 
-pub enum EditorAction {
-    None,
-    Exit,
-}
-
 pub(crate) struct EditorState {
     data: Vec<String>,
     term_y: usize,

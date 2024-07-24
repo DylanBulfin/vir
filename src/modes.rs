@@ -4,7 +4,7 @@ use crossterm::event::{self, KeyCode, KeyEvent, KeyModifiers, ModifierKeyCode};
 use insert::process_insert_input;
 use normal::process_normal_input;
 
-use crate::editor::{EditorAction, EditorState};
+use crate::{actions::EditorAction, editor::EditorState};
 
 mod insert;
 mod normal;
