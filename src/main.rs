@@ -12,6 +12,7 @@ mod terminal;
 mod util;
 
 mod modes;
+mod config;
 
 fn main_loop() -> Result<()> {
     let mut term = Term::new().unwrap();

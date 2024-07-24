@@ -1,0 +1,42 @@
+[insert]
+newline = "enter"
+indent = "tab"
+delback = "backspace"
+delforw = "delete"
+normalmode = "esc"
+up = "up"
+down = "down"
+left = "left"
+right = "right"
+
+[normal]
+delete = "d"
+deletechar = "x"
+replace = "r"
+change = "c"
+yank = "y"
+insertmode = "u"
+visualmode = "v"
+up = "e"
+down = "n"
+left = "m"
+right = "i"
+
+[visual]
+delete = "d"
+deletechar = "x"
+replace = "r"
+change = "c"
+yank = "y"
+normalmode = "esc"
+up = "e"
+down = "n"
+left = "m"
+right = "i"
+
+[textobjects]
+word = "w"     # dw - delete to end of word
+char = "i"     # di - delete character under cursor
+lineend = "$"  # d$ - delete to end of line
+visline = "V"  # select line in visual mode, for normal repeat 
+               # the previous char (e.g. dd to delete line) 
