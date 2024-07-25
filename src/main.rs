@@ -4,15 +4,15 @@ use std::io::{stdout, Result, Write};
 use actions::EditorAction;
 use config::Config;
 use crossterm::event::{self, read};
-use crossterm::terminal::disable_raw_mode;
+use crossterm::terminal::{self, disable_raw_mode};
 use crossterm::{cursor, queue};
 use editor::{Cursor, EditorState};
 use modes::process_key_event;
-use terminal::Term;
+use term::Term;
 
 mod actions;
 mod editor;
-mod terminal;
+mod term;
 mod util;
 
 mod config;
@@ -43,17 +43,21 @@ fn main_loop() -> Result<()> {
         editor.redraw()?;
     }
 
-    Ok(())
+    queue!(
+        stdout(),
+        terminal::Clear(terminal::ClearType::All),
+        cursor::MoveTo(0,0),
+    )?;
+    
+    stdout().flush()
 }
 
 fn main() -> Result<()> {
     std::panic::set_hook(Box::new(|p| {
-        let mut file = File::create("foo.txt").unwrap();
-        file.write_all(p.to_string().as_bytes()).unwrap();
         disable_raw_mode().unwrap();
-        print!("{}", p)
+        println!("{}", p)
     }));
-    main_loop();
+    let _a = main_loop();
 
     disable_raw_mode()
 }

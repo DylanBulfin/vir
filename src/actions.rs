@@ -1,12 +1,11 @@
 use crossterm::event::{Event, KeyEvent};
 
-use crate::{editor::TextObject, terminal::Term};
+use crate::{editor::TextObject, term::Term};
 
 pub enum EditorAction {
     None,
     Exit,
 }
-
 
 #[derive(Clone, Copy)]
 pub(crate) enum InsertAction {
@@ -22,18 +21,17 @@ pub(crate) enum InsertAction {
     Right,
 
     NormalMode,
-    Exit,
 
     None,
 }
 
 #[derive(Clone, Copy)]
 pub(crate) enum NormalAction {
-    ReplaceChar(char),
-    Delete(TextObject),
-    Change(TextObject),
-    Yank(TextObject),
-    
+    ReplaceChar,
+    Delete,
+    Change,
+    Yank,
+
     LineStart,
     LineEnd,
 
@@ -52,10 +50,10 @@ pub(crate) enum NormalAction {
 
 #[derive(Clone, Copy)]
 pub(crate) enum VisualAction {
-    ReplaceChar(char),
-    Delete(TextObject),
-    Change(TextObject),
-    Yank(TextObject),
+    ReplaceChar,
+    Delete,
+    Change,
+    Yank,
 
     Up,
     Down,
@@ -64,4 +62,3 @@ pub(crate) enum VisualAction {
 
     NormalMode,
 }
-

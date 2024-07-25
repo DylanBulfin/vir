@@ -4,7 +4,7 @@ use crate::{
     actions::{InsertAction, NormalAction, VisualAction},
     config::Config,
     modes::Mode,
-    terminal::Term,
+    term::Term,
 };
 
 #[derive(Clone, Copy)]
@@ -41,11 +41,13 @@ pub(crate) enum TextObject {
     Char(Position),        // Line number, index
     Line(usize),           // Line number
     LineEnd(Position),     // Line number, start_index
-    Lines(usize, u16),     // Line number, count
     Word(Position, usize), // Line number, length
 
     // (start_lnum, start_index), (end_lnum, end_index)
     Other(Position, Position),
+
+    CancelOp,
+    None,
 }
 
 impl TextObject {
@@ -56,7 +58,9 @@ impl TextObject {
             | TextObject::Word(p, _)
             | TextObject::Other(p, _) => *p,
 
-            TextObject::Line(lnum) | TextObject::Lines(lnum, _) => Position::new(*lnum, 0),
+            TextObject::Line(lnum) => Position::new(*lnum, 0),
+            TextObject::CancelOp => panic!("CancelOp has no start position"),
+            TextObject::None => panic!("None has no start position"),
         }
     }
 
@@ -65,30 +69,23 @@ impl TextObject {
             TextObject::Char(p) => Position::new(p.lnum, p.index + 1),
             TextObject::Line(lnum) => Position::new(lnum + 1, 0),
             TextObject::LineEnd(p) => Position::new(p.lnum + 1, 0),
-            TextObject::Lines(lnum, c) => Position::new(*lnum + *c as usize, 0),
             TextObject::Word(p, c) => Position::new(p.lnum, p.index + *c as usize),
             TextObject::Other(_, p) => *p,
+            TextObject::CancelOp => panic!("CancelOp has no start position"),
+            TextObject::None => panic!("None has no start position"),
         }
     }
 
     pub fn get_bounds(&self) -> (Position, Position) {
         (self.get_start(), self.get_end())
     }
-}
 
-pub fn get_word_textobject(pos: Position, line: &str) -> TextObject {
-    let word_chars = match env::var("WORDCHARS") {
-        Ok(wc) => wc,
-        Err(_) => String::from("*?_-.[]~=&;!#$%^(){}<>"),
-    };
-
-    TextObject::Word(
-        pos,
-        match line[pos.index..].split_once(|c| word_chars.contains(c)) {
-            Some((w, _)) => w.len(),
-            None => line.len() - pos.index,
-        },
-    )
+    pub fn is_none(&self) -> bool {
+        match &self {
+            TextObject::None => true,
+            _ => false,
+        }
+    }
 }
 
 pub enum CursorMode {
@@ -175,7 +172,11 @@ impl EditorState {
         if self.cursor.pos.index >= self.data[self.cursor.pos.lnum].len() {
             // Insert mode can go one character farther right
             self.cursor.pos.index = self.data[self.cursor.pos.lnum].len()
-                - if self.mode == Mode::Insert { 0 } else { 1 };
+                - if self.mode == Mode::Insert || self.cursor.pos.index == 0 {
+                    0
+                } else {
+                    1
+                };
         }
 
         // Now reposition the terminal window so that it contains the cursor
@@ -212,10 +213,44 @@ impl EditorState {
         self.cursor.mode = CursorMode::Bar
     }
 
+    pub fn get_word_textobject(&self, pos: Position) -> TextObject {
+        let word_chars = match env::var("WORDCHARS") {
+            Ok(wc) => wc,
+            Err(_) => String::from("*?_-.[]~=&;!#$%^(){}<>"),
+        };
+
+        TextObject::Word(
+            pos,
+            match self.data[pos.lnum][pos.index..].split_once(|c| word_chars.contains(c)) {
+                Some((w, _)) => w.len(),
+                None => self.data[pos.lnum].len() - pos.index,
+            },
+        )
+    }
+
     pub fn insert_text(&mut self, pos: Position, text: &str) {
         let (p1, p2) = self.data[pos.lnum].split_at(pos.index);
         self.data[pos.lnum] = format!("{}{}{}", p1, text, p2);
         self.cursor.pos.index += text.len()
+    }
+
+    pub fn replace(&mut self, to: TextObject, text: &str) {
+        if to.is_none() {
+            return;
+        }
+
+        let (start, end) = to.get_bounds();
+
+        self.data[start.lnum] = format!(
+            "{}{}{}",
+            &self.data[start.lnum][..start.index],
+            text,
+            &self.data[end.lnum][end.index..]
+        );
+
+        for lnum in start.lnum + 1..end.lnum + 1 {
+            self.data.remove(lnum);
+        }
     }
 
     pub fn insert_newline(&mut self) {
@@ -239,6 +274,10 @@ impl EditorState {
     }
 
     pub fn delete(&mut self, txt_obj: TextObject) {
+        if txt_obj.is_none() {
+            return;
+        }
+
         let (start, end) = txt_obj.get_bounds();
 
         self.data[start.lnum] = format!(
@@ -298,5 +337,13 @@ impl EditorState {
 
     pub fn cursor_up(&mut self) {
         self.cursor.pos.lnum = self.cursor.pos.lnum.saturating_sub(1);
+    }
+
+    pub fn line_start(&mut self) {
+        self.cursor.pos.index = 0;
+    }
+
+    pub fn line_end(&mut self) {
+        self.cursor.pos.index = self.data[self.cursor.pos.lnum].len();
     }
 }

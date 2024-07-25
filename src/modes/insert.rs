@@ -3,9 +3,7 @@ use std::{default, io::Result};
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use crate::actions::{EditorAction, InsertAction};
-use crate::editor::{EditorState, Position, TextObject};
-
-const TABSTOP: u32 = 2;
+use crate::editor::{EditorState, TextObject};
 
 pub fn process_insert_input(ke: KeyEvent, state: &mut EditorState) -> Result<EditorAction> {
     let action = parse_insert_input(ke, state)?;
@@ -30,7 +28,6 @@ pub fn process_insert_input(ke: KeyEvent, state: &mut EditorState) -> Result<Edi
         InsertAction::Left => state.cursor_left(),
         InsertAction::Right => state.cursor_right(),
         InsertAction::NormalMode => state.normal_mode(),
-        InsertAction::Exit => return Ok(EditorAction::Exit),
         InsertAction::None => (),
     }
 
@@ -57,18 +54,6 @@ fn parse_insert_input(ke: KeyEvent, state: &mut EditorState) -> Result<InsertAct
             match action {
                 Some(a) => a,
                 None => InsertAction::None,
-            }
-        } else if ke.modifiers
-            == KeyModifiers::from_name("CONTROL").expect("Unable to check modifiers")
-        {
-            if let KeyCode::Char(c) = ke.code {
-                if c == 'c' {
-                    InsertAction::Exit
-                } else {
-                    InsertAction::None
-                }
-            } else {
-                InsertAction::None
             }
         } else {
             InsertAction::None

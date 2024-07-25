@@ -48,7 +48,7 @@ impl Config {
     pub fn textobject(&self, key: &str) -> Option<TextObject> {
         self.textobjects.get(key).map(|b| *b)
     }
-    
+
     pub fn option(&self, key: &str) -> i64 {
         self.options[key]
     }
@@ -90,6 +90,15 @@ impl Config {
                 "tab".to_string()
             },
             InsertAction::Indent,
+        );
+
+        map.insert(
+            if tab.contains_key("normalmode") {
+                tab.get("indent").unwrap().to_string()
+            } else {
+                "esc".to_string()
+            },
+            InsertAction::NormalMode,
         );
 
         map.insert(
@@ -140,7 +149,7 @@ impl Config {
             } else {
                 "r".to_string()
             },
-            NormalAction::ReplaceChar(' '),
+            NormalAction::ReplaceChar,
         );
 
         map.insert(
@@ -149,7 +158,7 @@ impl Config {
             } else {
                 "d".to_string()
             },
-            NormalAction::Delete(TextObject::Char(Position::new(0, 0))),
+            NormalAction::Delete,
         );
 
         map.insert(
@@ -158,7 +167,7 @@ impl Config {
             } else {
                 "c".to_string()
             },
-            NormalAction::Change(TextObject::Char(Position::new(0, 0))),
+            NormalAction::Change,
         );
 
         map.insert(
@@ -167,7 +176,7 @@ impl Config {
             } else {
                 "y".to_string()
             },
-            NormalAction::Yank(TextObject::Char(Position::new(0, 0))),
+            NormalAction::Yank,
         );
 
         map.insert(
@@ -254,7 +263,7 @@ impl Config {
             } else {
                 "r".to_string()
             },
-            VisualAction::ReplaceChar(' '),
+            VisualAction::ReplaceChar,
         );
 
         map.insert(
@@ -263,7 +272,7 @@ impl Config {
             } else {
                 "d".to_string()
             },
-            VisualAction::Delete(TextObject::Char(Position::new(0, 0))),
+            VisualAction::Delete,
         );
 
         map.insert(
@@ -272,7 +281,7 @@ impl Config {
             } else {
                 "c".to_string()
             },
-            VisualAction::Change(TextObject::Char(Position::new(0, 0))),
+            VisualAction::Change,
         );
 
         map.insert(
@@ -281,7 +290,7 @@ impl Config {
             } else {
                 "y".to_string()
             },
-            VisualAction::Yank(TextObject::Char(Position::new(0, 0))),
+            VisualAction::Yank,
         );
 
         map.insert(
@@ -369,6 +378,15 @@ impl Config {
                 "$".to_string()
             },
             TextObject::LineEnd(Position::new(0, 0)),
+        );
+
+        map.insert(
+            if tab.contains_key("cancelop") {
+                tab.get("exit").unwrap().to_string()
+            } else {
+                "esc".to_string()
+            },
+            TextObject::CancelOp,
         );
 
         Ok(map)
