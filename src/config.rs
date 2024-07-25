@@ -1,5 +1,5 @@
 use std::fs;
-use std::{collections::HashMap, hash::Hash};
+use std::collections::HashMap;
 
 use std::io::Result;
 use toml::{Table, Value};

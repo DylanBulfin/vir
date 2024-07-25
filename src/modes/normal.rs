@@ -1,4 +1,4 @@
-use crossterm::event::{self, read, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use std::io::Result;
 
 use crate::{

@@ -1,7 +1,3 @@
-use crossterm::event::{Event, KeyEvent};
-
-use crate::{editor::TextObject, term::Term};
-
 pub enum EditorAction {
     None,
     Exit,

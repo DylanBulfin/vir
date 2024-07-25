@@ -1,4 +1,4 @@
-use std::{default, io::Result};
+use std::io::Result;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 

@@ -1,4 +1,3 @@
-use std::fs::File;
 use std::io::{stdout, Result, Write};
 
 use actions::EditorAction;
@@ -6,14 +5,13 @@ use config::Config;
 use crossterm::event::{self, read};
 use crossterm::terminal::{self, disable_raw_mode};
 use crossterm::{cursor, queue};
-use editor::{Cursor, EditorState};
+use editor::EditorState;
 use modes::process_key_event;
 use term::Term;
 
 mod actions;
 mod editor;
 mod term;
-mod util;
 
 mod config;
 mod modes;

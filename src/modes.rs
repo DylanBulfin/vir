@@ -1,6 +1,6 @@
 use std::io::Result;
 
-use crossterm::event::{self, KeyCode, KeyEvent, KeyModifiers, ModifierKeyCode};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use insert::process_insert_input;
 use normal::process_normal_input;
 use visual::process_visual_input;

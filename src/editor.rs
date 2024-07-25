@@ -1,4 +1,4 @@
-use std::{env, io::Result, ops::Deref, sync::Arc};
+use std::{env, io::Result};
 
 use crate::{
     actions::{InsertAction, NormalAction, VisualAction},
@@ -114,14 +114,6 @@ pub struct Cursor {
 impl Cursor {
     pub fn pos(&self) -> Position {
         self.pos
-    }
-
-    pub fn set_lnum(&mut self, lnum: usize) {
-        self.pos.lnum = lnum
-    }
-
-    pub fn set_index(&mut self, index: usize) {
-        self.pos.index = index
     }
 }
 
