@@ -1,4 +1,4 @@
-use std::{env, io::Result};
+use std::{env, io::Result, ops::Deref, sync::Arc};
 
 use crate::{
     actions::{InsertAction, NormalAction, VisualAction},
@@ -7,7 +7,7 @@ use crate::{
     term::Term,
 };
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub(crate) struct Position {
     lnum: usize,
     index: usize,
@@ -38,13 +38,12 @@ impl From<(usize, usize)> for Position {
 
 #[derive(Clone, Copy)]
 pub(crate) enum TextObject {
-    Char(Position),        // Line number, index
-    Line(usize),           // Line number
-    LineEnd(Position),     // Line number, start_index
-    Word(Position, usize), // Line number, length
+    Char(Position),
+    Line(usize),              // Line number
+    LineEnd(Position, usize), // Pos, # chars
+    Word(Position, usize),    // Pos, # chars
 
-    // (start_lnum, start_index), (end_lnum, end_index)
-    Other(Position, Position),
+    Selection(Position), // Position of cursor end of selection
 
     CancelOp,
     None,
@@ -53,14 +52,12 @@ pub(crate) enum TextObject {
 impl TextObject {
     pub fn get_start(&self) -> Position {
         match self {
-            TextObject::Char(p)
-            | TextObject::LineEnd(p)
-            | TextObject::Word(p, _)
-            | TextObject::Other(p, _) => *p,
+            TextObject::Char(p) | TextObject::LineEnd(p, _) | TextObject::Word(p, _) => *p,
 
             TextObject::Line(lnum) => Position::new(*lnum, 0),
             TextObject::CancelOp => panic!("CancelOp has no start position"),
             TextObject::None => panic!("None has no start position"),
+            TextObject::Selection(_) => panic!("Selection has no start position"),
         }
     }
 
@@ -68,16 +65,38 @@ impl TextObject {
         match self {
             TextObject::Char(p) => Position::new(p.lnum, p.index + 1),
             TextObject::Line(lnum) => Position::new(lnum + 1, 0),
-            TextObject::LineEnd(p) => Position::new(p.lnum + 1, 0),
-            TextObject::Word(p, c) => Position::new(p.lnum, p.index + *c as usize),
-            TextObject::Other(_, p) => *p,
+            TextObject::Word(p, c) | TextObject::LineEnd(p, c) => {
+                Position::new(p.lnum, p.index + *c as usize)
+            }
             TextObject::CancelOp => panic!("CancelOp has no start position"),
             TextObject::None => panic!("None has no start position"),
+            TextObject::Selection(_) => panic!("Selection has no start position"),
         }
     }
 
     pub fn get_bounds(&self) -> (Position, Position) {
         (self.get_start(), self.get_end())
+    }
+
+    pub fn get_selection_bounds(&self, anchor: Position) -> (Position, Position) {
+        if let TextObject::Selection(pos) = self {
+            let largest = if pos.lnum > anchor.lnum || pos.index > anchor.index {
+                pos
+            } else {
+                &anchor
+            };
+            let smallest = if largest == pos { &anchor } else { pos };
+
+            (
+                *smallest,
+                Position {
+                    lnum: largest.lnum,
+                    index: largest.index + 1,
+                },
+            )
+        } else {
+            panic!("get_selection_bounds should only be called on Selection type")
+        }
     }
 
     pub fn is_none(&self) -> bool {
@@ -88,24 +107,13 @@ impl TextObject {
     }
 }
 
-pub enum CursorMode {
-    BlinkLine,
-    BlinkBar,
-    Bar,
-}
-
 pub struct Cursor {
     pos: Position,
-    mode: CursorMode,
 }
 
 impl Cursor {
     pub fn pos(&self) -> Position {
         self.pos
-    }
-
-    pub fn mode(&self) -> &CursorMode {
-        &self.mode
     }
 
     pub fn set_lnum(&mut self, lnum: usize) {
@@ -123,6 +131,7 @@ pub(crate) struct EditorState {
     term_x: usize,
     mode: Mode,
     cursor: Cursor,
+    anchor: Position, // Position of anchor in visual mode
     term: Term,
     config: Config,
 }
@@ -136,8 +145,8 @@ impl EditorState {
             mode: Mode::Insert,
             cursor: Cursor {
                 pos: Position::new(0, 0),
-                mode: CursorMode::BlinkLine,
             },
+            anchor: Position::new(0, 0),
             term,
             config,
         }
@@ -154,10 +163,11 @@ impl EditorState {
     pub fn redraw(&mut self) -> Result<()> {
         self.wrangle_cursor();
         let upper_limit = self.data.len().min(self.term_y + self.term.height());
+        let (cursor, anchor) = self.get_selection_xy();
         self.term.redraw(
             self.term_x,
-            self.cursor.pos.index - self.term_x,
-            self.cursor.pos.lnum - self.term_y,
+            cursor,
+            anchor,
             &self.mode,
             &self.data[self.term_y..upper_limit],
         )
@@ -172,7 +182,7 @@ impl EditorState {
         if self.cursor.pos.index >= self.data[self.cursor.pos.lnum].len() {
             // Insert mode can go one character farther right
             self.cursor.pos.index = self.data[self.cursor.pos.lnum].len()
-                - if self.mode == Mode::Insert || self.cursor.pos.index == 0 {
+                - if self.mode == Mode::Insert || self.data[self.cursor.pos.lnum].len() == 0 {
                     0
                 } else {
                     1
@@ -194,23 +204,34 @@ impl EditorState {
         }
     }
 
+    fn get_selection_xy(&self) -> ((usize, usize), (usize, usize)) {
+        let cursor = (
+            self.cursor.pos.index - self.term_x,
+            self.cursor.pos.lnum - self.term_y,
+        );
+        let anchor = (
+            self.anchor.index - self.term_x,
+            self.anchor.lnum - self.term_y,
+        );
+
+        (cursor, anchor)
+    }
+
     pub fn resize(&mut self, width: usize, height: usize) {
         self.term.resize(width, height)
     }
 
     pub fn insert_mode(&mut self) {
         self.mode = Mode::Insert;
-        self.cursor.mode = CursorMode::BlinkLine
     }
 
     pub fn normal_mode(&mut self) {
         self.mode = Mode::Normal;
-        self.cursor.mode = CursorMode::BlinkBar
     }
 
     pub fn visual_mode(&mut self) {
         self.mode = Mode::Visual;
-        self.cursor.mode = CursorMode::Bar
+        self.anchor = self.cursor.pos;
     }
 
     pub fn get_word_textobject(&self, pos: Position) -> TextObject {
@@ -228,18 +249,28 @@ impl EditorState {
         )
     }
 
+    pub fn get_lineend_textobject(&self, pos: Position) -> TextObject {
+        TextObject::LineEnd(pos, self.data[pos.lnum].len() - pos.index)
+    }
+
     pub fn insert_text(&mut self, pos: Position, text: &str) {
         let (p1, p2) = self.data[pos.lnum].split_at(pos.index);
         self.data[pos.lnum] = format!("{}{}{}", p1, text, p2);
         self.cursor.pos.index += text.len()
     }
 
-    pub fn replace(&mut self, to: TextObject, text: &str) {
-        if to.is_none() {
+    pub fn replace(&mut self, txt_obj: TextObject, text: &str) {
+        if txt_obj.is_none() {
             return;
         }
 
-        let (start, end) = to.get_bounds();
+        let (start, end) = if let TextObject::Selection(_) = txt_obj {
+            txt_obj.get_selection_bounds(self.anchor)
+        } else {
+            txt_obj.get_bounds()
+        };
+
+        self.normal_mode();
 
         self.data[start.lnum] = format!(
             "{}{}{}",
@@ -278,7 +309,13 @@ impl EditorState {
             return;
         }
 
-        let (start, end) = txt_obj.get_bounds();
+        let (start, end) = if let TextObject::Selection(_) = txt_obj {
+            txt_obj.get_selection_bounds(self.anchor)
+        } else {
+            txt_obj.get_bounds()
+        };
+
+        self.normal_mode();
 
         self.data[start.lnum] = format!(
             "{}{}",

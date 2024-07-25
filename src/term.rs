@@ -3,13 +3,11 @@ use std::io::{stdout, Result, Write};
 use crossterm::{
     cursor::{self, SetCursorStyle},
     queue,
+    style::Stylize,
     terminal::{self, enable_raw_mode},
 };
 
-use crate::{
-    editor::{Cursor, CursorMode},
-    modes::Mode,
-};
+use crate::modes::Mode;
 
 pub(crate) struct Term {
     width: usize,
@@ -29,15 +27,15 @@ impl Term {
         Ok(Term {
             width: terminal::size()?.0 as usize,
             // There was a bug i couldn't fix
-            height: terminal::size()?.1 as usize, // - 1,
+            height: terminal::size()?.1 as usize - 1,
         })
     }
 
     pub fn redraw(
         &self,
         x_offset: usize,
-        x: usize,
-        y: usize,
+        cursor: (usize, usize),
+        anchor: (usize, usize),
         mode: &Mode,
         text: &[String],
     ) -> Result<()> {
@@ -57,17 +55,27 @@ impl Term {
                 &line[x_offset..x_offset + limit]
             };
 
-            print!("{}", line);
-            // Don't want to add newline on last line
-            if i < text.len() - 1 {
-                println!("");
-                queue!(stdout, cursor::MoveToColumn(0))?;
+            if *mode == Mode::Visual && i == anchor.1 {
+                println!(
+                    "{}{}{}",
+                    &line[..anchor.0],
+                    &line[anchor.0..anchor.0 + 1].black().on_white(),
+                    &line[anchor.0 + 1..]
+                )
+            } else {
+                println!("{}", line);
             }
+
+            queue!(stdout, cursor::MoveToColumn(0))?;
         }
+
+        queue!(stdout, cursor::MoveTo(0, self.height as u16))?;
+
+        print!("{}", mode.get_name());
 
         queue!(
             stdout,
-            cursor::MoveTo(x as u16, y as u16),
+            cursor::MoveTo(cursor.0 as u16, cursor.1 as u16),
             match mode {
                 Mode::Insert => SetCursorStyle::BlinkingBar,
                 Mode::Normal => SetCursorStyle::BlinkingBlock,

@@ -162,6 +162,15 @@ impl Config {
         );
 
         map.insert(
+            if tab.contains_key("deletechar") {
+                tab.get("deletechar").unwrap().to_string()
+            } else {
+                "x".to_string()
+            },
+            NormalAction::DeleteChar,
+        );
+
+        map.insert(
             if tab.contains_key("change") {
                 tab.get("change").unwrap().to_string()
             } else {
@@ -177,6 +186,24 @@ impl Config {
                 "y".to_string()
             },
             NormalAction::Yank,
+        );
+
+        map.insert(
+            if tab.contains_key("linestart") {
+                tab.get("linestart").unwrap().to_string()
+            } else {
+                "^".to_string()
+            },
+            NormalAction::LineStart,
+        );
+
+        map.insert(
+            if tab.contains_key("lineend") {
+                tab.get("lineend").unwrap().to_string()
+            } else {
+                "$".to_string()
+            },
+            NormalAction::LineEnd,
         );
 
         map.insert(
@@ -276,6 +303,15 @@ impl Config {
         );
 
         map.insert(
+            if tab.contains_key("deletechar") {
+                tab.get("deletechar").unwrap().to_string()
+            } else {
+                "x".to_string()
+            },
+            VisualAction::DeleteChar,
+        );
+
+        map.insert(
             if tab.contains_key("change") {
                 tab.get("change").unwrap().to_string()
             } else {
@@ -291,6 +327,24 @@ impl Config {
                 "y".to_string()
             },
             VisualAction::Yank,
+        );
+
+        map.insert(
+            if tab.contains_key("linestart") {
+                tab.get("linestart").unwrap().to_string()
+            } else {
+                "^".to_string()
+            },
+            VisualAction::LineStart,
+        );
+
+        map.insert(
+            if tab.contains_key("lineend") {
+                tab.get("lineend").unwrap().to_string()
+            } else {
+                "$".to_string()
+            },
+            VisualAction::LineEnd,
         );
 
         map.insert(
@@ -337,6 +391,15 @@ impl Config {
             },
             VisualAction::NormalMode,
         );
+        
+        map.insert(
+            if tab.contains_key("exit") {
+                tab.get("exit").unwrap().to_string()
+            } else {
+                "q".to_string()
+            },
+            VisualAction::Exit,
+        );
 
         Ok(map)
     }
@@ -377,7 +440,7 @@ impl Config {
             } else {
                 "$".to_string()
             },
-            TextObject::LineEnd(Position::new(0, 0)),
+            TextObject::LineEnd(Position::new(0, 0), 0),
         );
 
         map.insert(

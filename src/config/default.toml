@@ -15,7 +15,8 @@ deletechar = "x"
 replace = "r"
 change = "c"
 yank = "y"
-cancelop = "esc"
+linestart = "^"
+lineend = "$"
 insertmode = "u"
 visualmode = "v"
 up = "e"
@@ -29,6 +30,8 @@ deletechar = "x"
 replace = "r"
 change = "c"
 yank = "y"
+linestart = "^"
+lineend = "$"
 normalmode = "esc"
 up = "e"
 down = "n"
@@ -36,8 +39,9 @@ left = "m"
 right = "i"
 
 [textobjects]
-word = "w"     # dw - delete to end of word
-char = "i"     # di - delete character under cursor
-lineend = "$"  # d$ - delete to end of line
-visline = "V"  # select line in visual mode, for normal repeat 
-               # the previous char (e.g. dd to delete line) 
+word = "w"         # dw - delete to end of word
+char = "i"         # di - delete character under cursor
+lineend = "$"      # d$ - delete to end of line
+visline = "V"      # select line in visual mode, for normal repeat 
+                   # the previous char (e.g. dd to delete line) 
+cancelop = "esc"   # Cancel currently queued operation

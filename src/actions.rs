@@ -29,6 +29,7 @@ pub(crate) enum InsertAction {
 pub(crate) enum NormalAction {
     ReplaceChar,
     Delete,
+    DeleteChar,
     Change,
     Yank,
 
@@ -52,8 +53,12 @@ pub(crate) enum NormalAction {
 pub(crate) enum VisualAction {
     ReplaceChar,
     Delete,
+    DeleteChar,
     Change,
     Yank,
+    
+    LineStart,
+    LineEnd,
 
     Up,
     Down,
@@ -61,4 +66,7 @@ pub(crate) enum VisualAction {
     Right,
 
     NormalMode,
+    Exit,
+    
+    None,
 }
