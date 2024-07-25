@@ -35,12 +35,13 @@ impl Position {
     }
 }
 
-impl From<(usize, usize)> for Position {
-    fn from(value: (usize, usize)) -> Self {
-        Self {
-            lnum: value.0,
-            index: value.1,
+impl PartialOrd for Position {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match self.lnum.partial_cmp(&other.lnum) {
+            Some(core::cmp::Ordering::Equal) => {}
+            ord => return ord,
         }
+        self.index.partial_cmp(&other.index)
     }
 }
 
@@ -335,6 +336,9 @@ impl EditorState {
         }
 
         let (start, end) = if let TextObject::Selection(_) = txt_obj {
+            if self.anchor < self.cursor.pos {
+                self.cursor.pos = self.anchor;
+            }
             txt_obj.get_selection_bounds(self.anchor)
         } else {
             txt_obj.get_bounds()
@@ -348,7 +352,7 @@ impl EditorState {
             &self.data[end.lnum][end.index..]
         );
 
-        for lnum in start.lnum + 1..end.lnum + 1 {
+        for lnum in (start.lnum + 1..end.lnum + 1).rev() {
             self.data.remove(lnum);
         }
     }

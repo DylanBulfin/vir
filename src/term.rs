@@ -55,13 +55,60 @@ impl Term {
                 &line[x_offset..x_offset + limit]
             };
 
-            if *mode == Mode::Visual && i == anchor.1 {
-                println!(
-                    "{}{}{}",
-                    &line[..anchor.0],
-                    &line[anchor.0..anchor.0 + 1].black().on_white(),
-                    &line[anchor.0 + 1..]
-                )
+            let (y1, y2) = if cursor.1 > anchor.1 {
+                (anchor.1, cursor.1)
+            } else {
+                (cursor.1, anchor.1)
+            };
+
+            if *mode == Mode::Visual && i >= y1 && i <= y2 && cursor != anchor {
+                if y1 == y2 {
+                    if cursor.0 < anchor.0 {
+                        println!(
+                            "{}{}{}",
+                            &line[..cursor.0 + 1],
+                            &line[cursor.0 + 1..anchor.0 + 1].black().on_white(),
+                            &line[anchor.0 + 1..]
+                        )
+                    } else {
+                        println!(
+                            "{}{}{}",
+                            &line[..anchor.0],
+                            &line[anchor.0..cursor.0].black().on_white(),
+                            &line[cursor.0..]
+                        )
+                    }
+                } else if i == y1 {
+                    if cursor.1 < anchor.1 {
+                        println!(
+                            "{}{}",
+                            &line[..cursor.0 + 1],
+                            &line[cursor.0 + 1..].black().on_white(),
+                        )
+                    } else {
+                        println!(
+                            "{}{}",
+                            &line[..anchor.0],
+                            &line[anchor.0..].black().on_white(),
+                        )
+                    }
+                } else if i == y2 {
+                    if cursor.1 > anchor.1 {
+                        println!(
+                            "{}{}",
+                            &line[..cursor.0].black().on_white(),
+                            &line[cursor.0..],
+                        )
+                    } else {
+                        println!(
+                            "{}{}",
+                            &line[..anchor.0 + 1].black().on_white(),
+                            &line[anchor.0 + 1..],
+                        )
+                    }
+                } else {
+                    println!("{}", line.black().on_white())
+                }
             } else {
                 println!("{}", line);
             }
