@@ -1,4 +1,6 @@
-use std::io::{stdout, Result, Write};
+use std::env::args;
+use std::fs::File;
+use std::io::{stdout, BufRead, BufReader, Result, Write};
 
 use actions::EditorAction;
 use config::Config;
@@ -16,10 +18,10 @@ mod term;
 mod config;
 mod modes;
 
-fn main_loop() -> Result<()> {
+fn main_loop(filename: &str, data: Vec<String>) -> Result<()> {
     let term = Term::new()?;
     let config = Config::init()?;
-    let mut editor = EditorState::new(vec!["abc".to_string(), "bcdef".to_string()], term, config);
+    let mut editor = EditorState::new(data, term, config);
 
     editor.redraw()?;
 
@@ -36,6 +38,7 @@ fn main_loop() -> Result<()> {
         match action {
             EditorAction::None => (),
             EditorAction::Exit => break,
+            EditorAction::Save => editor.save_file(filename)?,
         }
 
         editor.redraw()?;
@@ -44,18 +47,31 @@ fn main_loop() -> Result<()> {
     queue!(
         stdout(),
         terminal::Clear(terminal::ClearType::All),
-        cursor::MoveTo(0,0),
+        cursor::MoveTo(0, 0),
     )?;
-    
-    stdout().flush()
+
+    stdout().flush()?;
+
+    Ok(())
+}
+
+fn read_file(name: &str) -> Result<Vec<String>> {
+    let f = File::open(name).expect("Couldn't open file for reading");
+    let buf = BufReader::new(f);
+
+    buf.lines().collect()
 }
 
 fn main() -> Result<()> {
     std::panic::set_hook(Box::new(|p| {
-        disable_raw_mode().unwrap();
+        disable_raw_mode().unwrap_or_default();
         println!("{}", p)
     }));
-    let _a = main_loop();
+
+    let filename = &args().collect::<Vec<_>>()[1];
+    let data = read_file(filename)?;
+
+    let _a = main_loop(filename, data);
 
     disable_raw_mode()
 }

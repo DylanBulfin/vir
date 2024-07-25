@@ -1,6 +1,7 @@
 pub enum EditorAction {
     None,
     Exit,
+    Save,
 }
 
 #[derive(Clone, Copy)]

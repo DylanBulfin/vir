@@ -1,4 +1,12 @@
-use std::{env, io::Result};
+use std::{
+    env,
+    fs::File,
+    io::{stdout, BufWriter, Result, Write},
+    thread::sleep,
+    time::Duration,
+};
+
+use crossterm::{cursor, queue, style::Stylize, terminal};
 
 use crate::{
     actions::{InsertAction, NormalAction, VisualAction},
@@ -163,6 +171,31 @@ impl EditorState {
             &self.mode,
             &self.data[self.term_y..upper_limit],
         )
+    }
+
+    pub fn save_file(&mut self, name: &str) -> Result<()> {
+        let f = File::create(name).expect("Unable to open file for writing");
+        let mut writer = BufWriter::new(f);
+
+        for line in self.data.iter() {
+            writeln!(writer, "{}", line)?;
+        }
+
+        let mut stdout = stdout();
+
+        queue!(
+            stdout,
+            cursor::MoveTo(0, self.term.height() as u16 / 2),
+            terminal::Clear(terminal::ClearType::All),
+        )?;
+
+        print!("{}", "Successfully saved file".cyan().on_dark_grey());
+        stdout.flush()?;
+        sleep(Duration::from_millis(2000));
+
+        self.redraw()?;
+
+        Ok(())
     }
 
     fn wrangle_cursor(&mut self) {

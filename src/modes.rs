@@ -30,25 +30,23 @@ impl Mode {
 }
 
 // TODO make this less awful
-pub fn is_sigint(ke: &KeyEvent) -> bool {
+fn is_special(ke: &KeyEvent) -> Option<EditorAction> {
     if ke.modifiers == KeyModifiers::from_name("CONTROL").expect("Unable to check modifiers") {
         if let KeyCode::Char(c) = ke.code {
-            if c == 'c' {
-                true
-            } else {
-                false
+            match c {
+                'c' => return Some(EditorAction::Exit),
+                's' => return Some(EditorAction::Save),
+                _ => return None,
             }
-        } else {
-            false
         }
-    } else {
-        false
     }
+
+    None
 }
 
 pub fn process_key_event(ke: KeyEvent, buf: &mut EditorState) -> Result<EditorAction> {
-    if is_sigint(&ke) {
-        return Ok(EditorAction::Exit);
+    if let Some(action) = is_special(&ke) {
+        return Ok(action);
     } else {
         match buf.mode() {
             Mode::Insert => process_insert_input(ke, buf),
