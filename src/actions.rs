@@ -1,3 +1,5 @@
+use crossterm::event::{KeyCode, KeyEvent};
+
 pub enum EditorAction {
     None,
     Exit,
@@ -53,7 +55,7 @@ pub(crate) enum VisualAction {
     DeleteChar,
     Change,
     Yank,
-    
+
     LineStart,
     LineEnd,
 
@@ -64,6 +66,22 @@ pub(crate) enum VisualAction {
 
     NormalMode,
     Exit,
-    
+
     None,
+}
+
+pub(crate) fn get_key_name(ke: &KeyEvent) -> String {
+    match ke.code {
+        KeyCode::Backspace => String::from("backspace"),
+        KeyCode::Enter => String::from("enter"),
+        KeyCode::Left => String::from("left"),
+        KeyCode::Right => String::from("right"),
+        KeyCode::Up => String::from("up"),
+        KeyCode::Down => String::from("down"),
+        KeyCode::Tab => String::from("tab"),
+        KeyCode::Delete => String::from("delete"),
+        KeyCode::Char(c) => c.to_string(),
+        KeyCode::Esc => String::from("esc"),
+        _ => panic!("Invalid key"),
+    }
 }

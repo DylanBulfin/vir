@@ -2,7 +2,7 @@ use std::io::Result;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::actions::{EditorAction, InsertAction};
+use crate::actions::{self, EditorAction, InsertAction};
 use crate::editor::{EditorState, TextObject};
 
 pub fn process_insert_input(ke: KeyEvent, state: &mut EditorState) -> Result<EditorAction> {
@@ -38,17 +38,8 @@ fn parse_insert_input(ke: KeyEvent, state: &mut EditorState) -> Result<InsertAct
     Ok(
         if ke.modifiers == KeyModifiers::from_name("NONE").expect("Unable to check modifiers") {
             let action = match ke.code {
-                KeyCode::Backspace => state.insert_bind("backspace"),
-                KeyCode::Enter => state.insert_bind("enter"),
-                KeyCode::Left => state.insert_bind("left"),
-                KeyCode::Right => state.insert_bind("right"),
-                KeyCode::Up => state.insert_bind("up"),
-                KeyCode::Down => state.insert_bind("down"),
-                KeyCode::Tab => state.insert_bind("tab"),
-                KeyCode::Delete => state.insert_bind("delete"),
-                KeyCode::Esc => state.insert_bind("esc"),
                 KeyCode::Char(c) => Some(InsertAction::Write(c)),
-                _ => Some(InsertAction::None),
+                _ => state.insert_bind(&actions::get_key_name(&ke)),
             };
 
             match action {

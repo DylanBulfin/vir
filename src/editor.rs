@@ -328,6 +328,7 @@ impl EditorState {
         self.data[lnum] = format!("{}{}", self.data[lnum], line);
 
         self.cursor.pos.index = end_index;
+        self.cursor.pos.lnum = lnum;
     }
 
     pub fn delete(&mut self, txt_obj: TextObject) {

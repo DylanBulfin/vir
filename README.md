@@ -1,3 +1,11 @@
+# Current State
+- All modes sort of work
+- Loading config from file definitely doesn't work
+- Need to fix my handling of empty lines in visual mode
+- Need to implement search mode
+- Command mode?
+- Copy/paste, maybe just using system clipboard
+
 # Goals
 - Support vim-like text editing
     - Three modes: Normal, Visual, Insert
