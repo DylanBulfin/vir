@@ -1,21 +1,15 @@
-# Current State
-- All modes sort of work
-- Loading config from file definitely doesn't work
-- Need to fix my handling of empty lines in visual mode
-- Need to implement search mode
-- Command mode?
-- Copy/paste, maybe just using system clipboard
+# Vir
+A terminal modal text editor, similar to vi(m). Supports rebinding for nearly all keys,
+via a config file at `~/.config/vir/config.toml`. See default config at
+`src/config/default.toml` for more explanation.
 
-# Goals
-- Support vim-like text editing
-    - Three modes: Normal, Visual, Insert
-- Basic configuration (probably TOML)
-    - Editor options (tabstop, relativenumber, etc)
-    - All keybindings reassignable (maybe except C-c?)
-- Probably yank/paste registers?
-    - Also probably try to interface with system clipboard
+## Video Demo
+[A YouTube demo that shows off the main features](https://youtu.be/RQ8O1kJQ5WQ)
+
+## Current State
+All features I wanted have been added. I will only be making updates if I notice bugs
     
-# Non-Goals
+## Non-Goals
 - Plugin system
 - File management unrelated to editing (e.g. delete/create file)
 - LSP, DAP, treesitter, completions, etc
